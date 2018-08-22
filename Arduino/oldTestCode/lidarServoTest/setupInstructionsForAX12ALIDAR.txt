@@ -1,0 +1,37 @@
+AX12a Servo Setup with Arduino Micro and 74LS241N Tristate buffer
+Using library from Savage Electronics (DynamixelSerial1.zip - http://savageelectronics.blogspot.com/2011/08/actualizacion-biblioteca-dynamixel.html)
+----------------------------
+Hardware:
+(See: http://savageelectronics.blogspot.com/2011/01/arduino-y-dynamixel-ax-12.html)
+(Duplicate pins are not included in the below list)
+
+- AX12A (Left Port) - Left Pin to 74LS241N Pin 3
+		    - Middle Pin to +12v
+		    - Right Pin to GND
+
+- 74LS241N - Pin 3 to Pin 2
+	   - Pin 2 to 10k resistor to +5V
+	   - Pin 1 to Pin 19
+	   - Pin 20 (Vcc) to +5V
+	   - Pin 10 (GND) to GND
+
+-Arduino Micro - (Provides +5V and GND. Ensure GND from +12V and +5V are connected!!)
+	       - TX to 74LS241N Pin 17
+	       - RX to 74LS241N Pin 18
+	       - Pin 2 (Data control) to 74LS241N Pin 19
+-----------------------------
+Software:
+- Simple arduino code
+- Include the library
+	#include <DynamixelSerial1.h> //AX12A servo library
+
+- Setup the servo connection
+
+	void setup() {
+  		Dynamixel.begin(1000000, 2); //Initialise servo at 1Mbps. Control pin 2
+ 		delay(1000); //give the servo some time to set itself up
+	}
+
+- Use Dynamixel.move(1, 20); to set servo 1 to position 20 (position in range 0 - 1023, corresponds to angles 0-300 degrees)
+
+- There is a user manual pdf for the library on the same page where it is downloaded
