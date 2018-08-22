@@ -1,0 +1,5 @@
+<launch>
+	<node name="groundYawPublisher" pkg="IMUPublisher" type="imuPublisher"/>
+	<node name="groundMovementSubscriber" pkg="MovementSubscriber" type="movementSubscriber"/>
+	<node name="groundSPIComms" pkg="ArduinoSPIComms" type="arduinoSPIComms"/>
+</launch>

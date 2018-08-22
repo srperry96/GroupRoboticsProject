@@ -1,0 +1,8 @@
+#!/bin/bash
+##IN ORDER FOR THE EXPORT FUNCTIONS TO WORK, THIS MUST BE RUN USING >. scriptName NOT >./scriptName
+#set ros ip address
+export ROS_IP="$(hostname -I)"
+export ROS_MASTER_URI=http://144.32.145.211:11311
+cd /home/pi/Desktop/GRP/pi_control_test_ws
+source devel/setup.bash
+roslaunch testLaunch.launch
