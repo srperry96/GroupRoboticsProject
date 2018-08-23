@@ -56,7 +56,6 @@ void loop (void) {
   if (currentMillis - startMillis >= 200) {
     irReadSensors();
     laserGetMeasurement();
-    Serial.println(lastLaserReading);
     startMillis = currentMillis;
   }
 
