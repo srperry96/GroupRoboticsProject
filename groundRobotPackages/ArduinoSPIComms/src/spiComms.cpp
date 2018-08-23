@@ -148,6 +148,7 @@ void armTiltCameraLow(){
   printf("Arm camera tilted down\n");
 }
 
+/* Tilt the arm camera to its central position */
 void armTiltCameraCenter(){
   char received;
 

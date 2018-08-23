@@ -40,6 +40,9 @@ void armReset(void);
 /* Tilt the arm camera down (used when the teddy is below the camera) */
 void armTiltCameraLow(void);
 
+/* Tilt the arm camera to its central position */
+void armTiltCameraCenter(void);
+
 /* Get a sensor reading from the laser (time of flight) sensor */
 uint8_t laserGetReading(void);
 

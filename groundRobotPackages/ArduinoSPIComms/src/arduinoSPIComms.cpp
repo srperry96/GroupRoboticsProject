@@ -69,7 +69,7 @@ void gripperInstructionsCallback(const std_msgs::Int8::ConstPtr& msg){
 
 /* Callback function which gets the most recent laser sensor reading from the arduino, then publishes it */
 void laserReadingCallback(const std_msgs::Empty& msg){
-	ros::Int16 laserReading;
+	std_msgs::Int16 laserReading;
 	//cast to 16 bit uint here as python doesnt do unsigned ints ie uses the MSB as a sign
 	laserReading.data = (uint16_t)laserGetReading();
 
