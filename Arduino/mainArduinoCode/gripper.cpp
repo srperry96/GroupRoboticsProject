@@ -65,7 +65,7 @@ void floorTeddy() {
   Dynamixel.setMaxTorque (3, MAX_TORQUE) ;
 
   //Move to a fixed position
-  move_overall(-20,0,20,0);
+  //move_overall(-20,0,20,0);
   //Inclination position to prepar to grab the bear
   move_overall(-20,70,20,50);
 

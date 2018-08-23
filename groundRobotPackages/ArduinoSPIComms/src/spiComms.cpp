@@ -285,3 +285,17 @@ void armTiltCameraLow(){
 
   printf("Arm camera tilted down\n");
 }
+
+void armTiltCameraCenter(){
+  char received;
+
+  spiTxRx('n');
+  usleep(10);
+
+  do{
+    received = spiTxRx('n');
+    usleep(10);
+  }while(received != 'n');
+
+  printf("Arm camera tilted to center\n");
+}

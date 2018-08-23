@@ -113,8 +113,12 @@ void gripperInstructionsCallback(const std_msgs::Int8::ConstPtr& msg){
 		case 2:	armGripLow();
 						break;
 
-		//tilt the arm camera down (there is no tilt up as we can just use the reset function instead)
+		//tilt the arm camera down
 		case 3:	armTiltCameraLow();
+						break;
+
+		//tilt the arm camera to its centered position so we can clearly see the bear on top of the car
+		case 4: armTiltCameraCenter();
 						break;
 
 		default: break;
