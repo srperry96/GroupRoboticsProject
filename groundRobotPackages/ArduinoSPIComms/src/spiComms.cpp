@@ -5,13 +5,7 @@ using namespace std;
 //spi directory variable
 int fd;
 
-//lidar scan increment
-uint8_t lastScanIncrement = 1;
-
 uint8_t irValues[8] = {};
-
-//full set of lidar data
-uint8_t fullScanData[360] = {};
 
 /* Sets up the SPI connection to the Arduino */
 int setupSPIComms(){
@@ -91,151 +85,19 @@ void irGetValues(){
       }
       usleep (10);
     }
-
-	//printout for debugging purposes
-//    for(int i = 0; i < 8; i++){
-//      printf("Sensor %d: %d;\n", i, irValues[i]);
-//    }
-}
-
-
-/* Trigger a full scan of lidar at a specific angle increment */
-void lidarStartFullScan(uint8_t increment){
-	char received = 0;
-
-	spiTxRx('c');
-	usleep(10);
-
-	do{
-		received = spiTxRx((char)increment);
-		usleep(10);
-	}while(received != 'c');
-
-	lastScanIncrement = increment;
-
-	printf("LIDAR SCAN TRIGGERED AT INCREMENT %d. WAIT A BIT AND THEN REQUEST RESULTS\n", lastScanIncrement);
-}
-
-/* Request a full set of lidar data (using lastIncrement, so only new data is transmitted) */
-void lidarGetFullScanData(){
-	char received = 0;
-
-	spiTxRx('d');
-	usleep(10);
-
-	do{
-		received = spiTxRx('d');
-		usleep(10);
-	}while(received != 'd');
-
-	for(int i = 0; i < 360; i += lastScanIncrement){
-		fullScanData[i] = spiTxRx(0);
-	}
-	printf("finished receiving scan data at increment %d\n", lastScanIncrement);
-}
-
-/* Set an angle for the lidar servo to move to */
-void lidarGoToAngle(uint16_t angle){
-	char received = 0;
-
-	spiTxRx('e');
-	usleep(10);
-
-	do{
-		//transmit top 8 bits of angle
-		received = spiTxRx((char)((angle & 0xFF00) >> 8));
-		usleep(10);
-	}while(received != 'e');
-
-	//transmit bottom 8 bits of angle
-	spiTxRx((char)(angle & 0x00FF));
-	usleep(10);
-
-	do{
-		received = spiTxRx(0);
-		usleep(10);
-	}while(received != 'x');
-
-	printf("Reached angle %d\n", angle);
-}
-
-/* Trigger a single scan of the lidar (sensorNum defines which sensor to take a reading from) */
-uint8_t lidarSingleScan(uint8_t sensorNum){
-	char received = 0;
-
-	//trigger a scan
-	spiTxRx('f');
-	usleep(10);
-
-	do{
-		received = spiTxRx((char)sensorNum);
-		usleep(10);
-	}while(received != 'f');
-
-	printf("triggered single scan on laser ID %d\n", sensorNum);
-
-	//wait for a bit
-	usleep(1000000);
-
-	//now ask for the result
-	spiTxRx('g');
-	usleep(10);
-
-	do{
-		received = spiTxRx(0);
-		usleep(10);
-	}while(received != 'g');
-
-	received = spiTxRx(0);
-
-	printf("single laser scan value received: %d\n", (uint8_t)received);
-
-	return (uint8_t)received;
-}
-
-
-/* Set the lidar scan range (range is 1-short, 2-long) */
-void lidarSetRange(uint8_t range){
-	char received = 0;
-
-	spiTxRx('h');
-	usleep(10);
-
-	do{
-		//send setting value
-		received = spiTxRx((char)range);
-		usleep(10);
-	}while(received != 'h');
-
-	printf("Set lidar range %d\n", range);
-}
-
-/* Set the timing budget used in lidar scans (budget is an 8 bit integer which is multiplied by 1000 on the arduino side) */
-void lidarSetTimingBudget(uint8_t budget){
-	char received;
-
-	spiTxRx('i');
-	usleep(10);
-
-	do{
-		received = spiTxRx((char)budget);
-		usleep(10);
-	}while(received != 'i');
-
-	printf("Set lidar timing budget %dx10^3\n", budget);
 }
 
 /* Tell the arm to grip in the high position */
 void armGripHigh(){
   char received;
 
-  spiTxRx('j');
+  spiTxRx('c');
   usleep(10);
 
   do{
-    received = spiTxRx('j');
+    received = spiTxRx('c');
     usleep(10);
-  }while(received != 'j');
+  }while(received != 'c');
 
 
   printf("Arm gripped high\n");
@@ -245,13 +107,13 @@ void armGripHigh(){
 void armGripLow(){
   char received;
 
-  spiTxRx('k');
+  spiTxRx('d');
   usleep(10);
 
   do{
-    received = spiTxRx('k');
+    received = spiTxRx('d');
     usleep(10);
-  }while(received != 'k');
+  }while(received != 'd');
 
   printf("Arm gripped low\n");
 }
@@ -260,13 +122,13 @@ void armGripLow(){
 void armReset(){
   char received;
 
-  spiTxRx('l');
+  spiTxRx('e');
   usleep(10);
 
   do{
-    received = spiTxRx('l');
+    received = spiTxRx('e');
     usleep(10);
-  }while(received != 'l');
+  }while(received != 'e');
 
   printf("Arm reset to start position\n");
 }
@@ -275,13 +137,13 @@ void armReset(){
 void armTiltCameraLow(){
   char received;
 
-  spiTxRx('m');
+  spiTxRx('f');
   usleep(10);
 
   do{
-    received = spiTxRx('m');
+    received = spiTxRx('f');
     usleep(10);
-  }while(received != 'm');
+  }while(received != 'f');
 
   printf("Arm camera tilted down\n");
 }
@@ -289,13 +151,31 @@ void armTiltCameraLow(){
 void armTiltCameraCenter(){
   char received;
 
-  spiTxRx('n');
+  spiTxRx('g');
   usleep(10);
 
   do{
-    received = spiTxRx('n');
+    received = spiTxRx('g');
     usleep(10);
-  }while(received != 'n');
+  }while(received != 'g');
 
   printf("Arm camera tilted to center\n");
+}
+
+/* Get a sensor reading from the laser (time of flight) sensor */
+uint8_t laserGetReading(){
+	char received = 0;
+
+  //transmit h and wait for acknowledgement
+	do{
+		received = spiTxRx('h');
+		usleep(10);
+	}while(received != 'h');
+
+  //push one more 0 to retrieve our measurement
+  received = spiTxRx(0);
+
+	printf("laser scan value %d\n", (uint8_t)received);
+
+  return (uint8_t)received;
 }

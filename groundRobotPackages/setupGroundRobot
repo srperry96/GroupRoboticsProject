@@ -1,8 +1,20 @@
 #!/bin/bash
+
+#check ros master ip parameter is given
+if [ "$1" = "" ]; then
+	echo "Missing parameter: (Last number in master IP)"
+else
+
 ##IN ORDER FOR THE EXPORT FUNCTIONS TO WORK, THIS MUST BE RUN USING >. scriptName NOT >./scriptName
-#set ros ip address
-export ROS_IP="$(hostname -I)"
-export ROS_MASTER_URI=http://144.32.145.211:11311
-cd /home/pi/Desktop/GRP/pi_control_test_ws
-source devel/setup.bash
-roslaunch testLaunch.launch
+
+	#set ros ip addresses
+	export ROS_IP="$(hostname -I)"
+	export ROS_MASTER_URI=http://192.168.1."$1":11311
+	#export a display as OpenCV requires it (allows us to run image processing on a headless pi)
+	export DISPLAY=:0.0
+	#change to the main ros workspace and run everything
+	cd /home/pi/Desktop/GRP/ground_robot_ws
+	source devel/setup.bash
+	roslaunch groundLaunch.launch
+
+fi

@@ -1,9 +1,7 @@
-#include "lidar.h"
+#include "laserSensor.h"
 #include "irFuncs.h"
 #include "gripper.h"
 
-//The LIDAR
-Lidar* lidar;
 
 //timing variables used for polling ir sensors 5 times a second
 unsigned long startMillis;
@@ -31,13 +29,13 @@ void setup (void) {
   //start serial for usb comms
   Serial.begin(9600);
 
-  lidar = new Lidar();
-
   //Setup SPI (in slave mode)
   pinMode(MISO, OUTPUT);
   SPCR |= _BV(SPE);
 
   irSetupMultiplexerPins();
+
+  laserSetup();
 
   //setup the AX12A servos of the gripper/arm
   setup_gripper();
@@ -54,9 +52,11 @@ void loop (void) {
   //update timer count
   currentMillis = millis();
   
-  //read ir sensors every 200ms
+  //read ir sensors and laser every 200ms
   if (currentMillis - startMillis >= 200) {
     irReadSensors();
+    laserGetMeasurement();
+    Serial.println(lastLaserReading);
     startMillis = currentMillis;
   }
 
@@ -96,111 +96,10 @@ void spiHandler(){
               }
               marker++; //increase marker so we move onto the next section of the operation
               break;
-      
-    //LIDAR - trigger a full scan using a given angle increment
-    case 'c': if(marker == 0){
-                spiWriteChar('c');
-                marker++;
-              }else{
-                lastScanIncrement = (uint8_t)SPDR; //get increment size from SPI
-                lidar->fullScan(lastScanIncrement);//do a full lidar scan at the given increment
-                //NOTE: The LIDAR scan stops the arduino doing anything else at the same time
-                //NOTE: Raspberry Pi must wait around 5 seconds for the scan to finish before asking for the new readings                
-                currentOperation = 'z';
-                marker = 0;
-              }
-              break;
-
-    //LIDAR - get most recent full set of readings
-    case 'd': if(marker == 0){
-                spiWriteChar('d');
-                marker++;
-              }else{
-                spiWriteChar((char)lidar->scan[marker - 1]); //write next LIDAR scan value to SPI
-                marker += lastScanIncrement;                 //increase marker by increment size so only new data is transmitted
-                if(marker > 360){
-                  currentOperation = 'z';
-                  marker = 0;
-                }
-              }
-              break;
-
-    //LIDAR - go to angle
-    case 'e': if(marker == 0){
-                spiWriteChar('e');
-                marker++;
-              }else if(marker == 1){ //angle is 16 bits, so is split and transmitted as two 8 bit values
-                desiredAngle = ((uint8_t)SPDR) << 8; //get upper 8 bits of angle, shift up 8 bits
-                marker++;
-              }else if(marker == 2){
-                desiredAngle += (uint8_t)SPDR; //add lower 8 bits to get actual angle value
-                marker++;
-              }else if(marker == 3){
-                spiWriteChar('w');//write w for waiting (pi pushes through zeros here until movement is complete)
-                lidar->turnToAngle(desiredAngle); //tell lidar to move to the angle
-                if(lidar->moving != true){ //if movement is finished, continue
-                  marker++;
-                }                             
-              }else if(marker == 4){
-                spiWriteChar('x'); //transmit an 'x' to show we have reached the correct angle, then reset markers
-                marker = 0;
-                currentOperation = 'z';          
-              }
-              break;
-              
-    //LIDAR - trigger single scan (assume we're already at the correct angle)
-    case 'f': if(marker == 0){
-                spiWriteChar('f');
-                marker++;
-              }else if(marker == 1){
-                lidar->singleScan((uint8_t)SPDR); //start a single scan using sensor defined by SPDR value
-                marker = 0;
-                currentOperation = 'z';
-              }
-              break;
-
-    //LIDAR - send single scan reading over SPI
-    case 'g': if(marker == 0){
-                spiWriteChar('g');
-                marker++;
-              }else if(marker == 1){
-                spiWriteChar((char)lidar->singleScanReading); //transmit single scan reading value over SPI
-                marker = 0;
-                currentOperation = 'z';
-              }
-              break;
-              
-    //Set LIDAR range - long or short
-    case 'h': if(marker == 0){
-                spiWriteChar('h');//ack byte
-                marker++;
-              }else{
-                //set LIDAR range accordingly
-                if((uint8_t)SPDR == 1){
-                  lidar->setLongRange(false);
-                }else if((uint8_t)SPDR == 2){
-                  lidar->setLongRange(true);
-                }
-                currentOperation = 'z';
-                marker = 0;
-              }
-              break;
-    
-    //Set LIDAR time budget
-    case 'i': if(marker == 0){
-                spiWriteChar('i');//ack
-                marker++;
-              }else{
-                //set LIDAR time budget as given value *10^3
-                lidar->setTimingBudget((uint8_t)SPDR * 1000);
-                marker = 0;
-                currentOperation = 'z';
-              }
-              break;
               
     //Gripper - grip high
-    case 'j': if(marker == 0){
-                spiWriteChar('j');
+    case 'c': if(marker == 0){
+                spiWriteChar('c');
                 marker++;
               }else{
                 carTeddy();
@@ -210,8 +109,8 @@ void spiHandler(){
               break;
 
     //Gripper - grip low
-    case 'k': if(marker == 0){
-                spiWriteChar('k');
+    case 'd': if(marker == 0){
+                spiWriteChar('d');
                 marker++;
               }else{
                 floorTeddy();
@@ -221,8 +120,8 @@ void spiHandler(){
               break;
 
     //Gripper - reset
-    case 'l': if(marker == 0){
-                spiWriteChar('l');
+    case 'e': if(marker == 0){
+                spiWriteChar('e');
                 marker++;
               }else{
                 reset_gripper();
@@ -231,9 +130,9 @@ void spiHandler(){
               }
               break;
 
-    //Gripper - tilt the camera down
-    case 'm': if(marker == 0){
-                spiWriteChar('m');
+    //Gripper - tilt camera down
+    case 'f': if(marker == 0){
+                spiWriteChar('f');
                 marker++;
               }else{
                 camera_down();
@@ -242,9 +141,9 @@ void spiHandler(){
               }
               break;
 
-    //Gripper - tilt camera up
-    case 'n': if(marker == 0){
-                spiWriteChar('n');
+    //Gripper - tilt camera center
+    case 'g': if(marker == 0){
+                spiWriteChar('g');
                 marker++;
               }else{
                 camera_center();
@@ -252,7 +151,19 @@ void spiHandler(){
                 currentOperation = 'z';
               }
               break;
-              
+
+    //Laser - get measurement
+    case 'h': if(marker == 0){
+                spiWriteChar('h');
+                marker++;
+              }else if(marker == 1){                                            
+                spiWriteChar((char)lastLaserReading);
+                marker = 0;
+                currentOperation = 'z';          
+              }
+              break;
+
+
     //default operation just resets the markers. This shouldnt ever be reached, but may be if the SPI interface receives erroneous data/noise
     //and interprets it as a message
     default:  currentOperation = 'z'; //
