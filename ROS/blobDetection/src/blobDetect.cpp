@@ -7,12 +7,20 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <iostream>
 
+#include <opencv2/opencv.hpp>
+
+const int alpha_slider_max = 100;
+int alpha_slider = 0;
+double alpha;
+double beta;
+
+
 using namespace cv;
 namespace enc = sensor_msgs::image_encodings;
 
 static const char WINDOW[] = "Image Processed";
 
-image_transport::Publisher blobITPub;
+//image_transport::Publisher blobITPub;
 
 int lowGreenH  = 60, lowGreenS  = 40,  lowGreenV  = 25;
 int highGreenH = 80, highGreenS = 105, highGreenV = 102;
@@ -68,11 +76,11 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     Mat imWithKeypoints;
     drawKeypoints(img_mask, keypoints, imWithKeypoints, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-    imshow("Processed video n that", imWithKeypoints);
-
+    imshow("Tuning HSV", imWithKeypoints);
     waitKey(3);
   //  blobITPub.publish(cv_ptr->toImageMsg());
 }
+
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "blobDetectNode");
@@ -81,14 +89,23 @@ int main(int argc, char** argv){
 
   image_transport::ImageTransport it(nh);
 
-  namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
+  namedWindow("Tuning HSV", 1);
+
+  createTrackbar("Low H", "Tuning HSV", &lowGreenH, 180);
+  createTrackbar("Low S", "Tuning HSV", &lowGreenS, 255);
+  createTrackbar("Low V", "Tuning HSV", &lowGreenV, 255);
+
+  createTrackbar("High H", "Tuning HSV", &highGreenH, 180);
+  createTrackbar("High S", "Tuning HSV", &highGreenS, 255);
+  createTrackbar("High V", "Tuning HSV", &highGreenV, 255);
+
 
   image_transport::Subscriber sub = it.subscribe("raspicam_node/image", 1, blobDetectCallback, ros::VoidPtr(),image_transport::TransportHints("compressed"));
-  blobITPub = it.advertise("camera/image_processed", 1);
-
-  destroyWindow(WINDOW);
+  //blobITPub = it.advertise("camera/image_processed", 1);
 
   ros::spin();
+
+  destroyWindow("Tuning HSV");
 
   return 0;
 }
