@@ -68,7 +68,7 @@ void gripperInstructionsCallback(const std_msgs::Int8::ConstPtr& msg){
 }
 
 /* Callback function which gets the most recent laser sensor reading from the arduino, then publishes it */
-void laserReadingCallback(const std_msgs::Empty& msg){
+void requestLaserReadingCallback(const std_msgs::Empty& msg){
 	std_msgs::Int16 laserReading;
 	//cast to 16 bit uint here as python doesnt do unsigned ints ie uses the MSB as a sign
 	laserReading.data = (uint16_t)laserGetReading();
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
 	ros::Subscriber gripperInstructionsSubscriber = nh.subscribe("/groundRobot/GripperInstructions", 10, gripperInstructionsCallback);
 
 	//Subscriber used to request a laser sensor reading
-	ros::Subscriber laserReadingSubscriber = nh.subscribe("/groundRobot/RequestLaserReading", 10, laserReadingCallback);
+	ros::Subscriber laserReadingRequestSubscriber = nh.subscribe("/groundRobot/RequestLaserReading", 10, requestLaserReadingCallback);
 
 	//setup SPI connection and test it. If this fails, return 0
 	if(!setupSPIComms()){

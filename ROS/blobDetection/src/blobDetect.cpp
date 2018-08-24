@@ -8,12 +8,17 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/opencv.hpp>
 #include <geometry_msgs/Point.h>
+#include <std_msgs/Int8.h>
+
 
 using namespace cv;
 namespace enc = sensor_msgs::image_encodings;
 
 //Publisher for the details of the biggest blob detected
 ros::Publisher biggestBlobPublisher;
+
+//Publisher to tell the system if green is currently being detected
+ros::Publisher seeGreenPublisher;
 //Publisher for the processed video
 image_transport::Publisher blobITPub;
 
@@ -24,17 +29,17 @@ int highGreenH = 90, highGreenS = 161, highGreenV = 100;
 /* Noise removal / filtering function - written by Finlay */
 void noiseRemoval(Mat &mask)
 {
- Mat erodeElement = getStructuringElement(MORPH_RECT, Size(3,3), Point(-1, -1)); //Any white part thats less than 7x7 px's gets ignored as it is seen as noise
- Mat dilateElement = getStructuringElement(MORPH_RECT, Size(10,10)); //Fill in gaps in objects so they are solid
+  Mat erodeElement = getStructuringElement(MORPH_RECT, Size(3,3), Point(-1, -1)); //Any white part thats less than 7x7 px's gets ignored as it is seen as noise
+  Mat dilateElement = getStructuringElement(MORPH_RECT, Size(10,10)); //Fill in gaps in objects so they are solid
 
- //These work best when done twice
- //erode - removes any pixels too small (removing noise)
- erode(mask, mask, erodeElement);
- erode(mask, mask, erodeElement);
+  //These work best when done twice
+  //erode - removes any pixels too small (removing noise)
+  erode(mask, mask, erodeElement);
+  erode(mask, mask, erodeElement);
 
- //dilate
- dilate(mask, mask, dilateElement);
- dilate(mask, mask, dilateElement);
+  //dilate
+  dilate(mask, mask, dilateElement);
+  dilate(mask, mask, dilateElement);
 }
 
 /* Get the ID of the largest blob in the keypoints vector - return -1 if no blobs are in the list */
@@ -62,6 +67,8 @@ int getBiggestBlob(const std::vector<KeyPoint>& keypoints){
 /* Callback function for every frame of video received. Translates to opencv format, then runs blob detection.
 Calculates the biggest blob and publishes its location and size in a ros::Point message */
 void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
+    std_msgs::Int8 seeGreenMsg;
+
     cv_bridge::CvImagePtr cv_ptr;
     //try to convert the frame of video to OpenCV format
     try{
@@ -111,15 +118,22 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
       biggestBlob.y = keypoints[biggestBlobID].pt.y;
       biggestBlob.z = keypoints[biggestBlobID].size;
       biggestBlobPublisher.publish(biggestBlob);
+
+      //publish a 1 on seeGreen topic so we know green is currently being detected
+      seeGreenMsg.data = 1;
+    }else{
+      //else publish a zero on seeGreen topic as we see no green
+      seeGreenMsg.data = 0;
     }
+    seeGreenPublisher.publish(seeGreenMsg);
 
     //display the image with blobs marked on (No longer used as we run the pi headless and publish the image to a ros topic)
     //imshow("BlobDetect", imWithKeypoints);
 
     //translate the processed image back to ROS format, then publish it
-    sensor_msgs::ImagePtr msg;
-    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
-    blobITPub.publish(msg);
+    sensor_msgs::ImagePtr processedVideo;
+    processedVideo = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
+    blobITPub.publish(processedVideo);
 
     //wait a short time
     waitKey(3);
@@ -138,7 +152,10 @@ int main(int argc, char** argv){
   image_transport::Subscriber sub = it.subscribe("raspicam_node/image", 1, blobDetectCallback, ros::VoidPtr(),image_transport::TransportHints("compressed"));
 
   //Publisher for details of the biggest blob detected on screen
-  biggestBlobPublisher = nh.advertise<geometry_msgs::Point>("/camera/Blobs", 10);
+  biggestBlobPublisher = nh.advertise<geometry_msgs::Point>("/camera/BiggestBlob", 10);
+
+  //Publisher to tell the system that green is currently being detected
+  seeGreenPublisher = nh.advertise<std_msgs::Int8>("/camera/SeeGreen", 10);
 
   //Publisher for the processed image so we can see what blobs are being detected on other machines
   blobITPub = it.advertise("camera/ProcessedWithBlobs", 1);
