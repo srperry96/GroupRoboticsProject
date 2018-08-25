@@ -1,3 +1,7 @@
+/* Functions for calculating and setting the hardware PWM on the Raspberry Pi to
+make the ground robot's wheels move.
+Written by Samuel Perry */
+
 #ifndef __GROUNDROBOTMOTORCONTROL_H__
 #define __GROUNDROBOTMOTORCONTROL_H__
 
@@ -11,7 +15,8 @@
 #define PWMMAXLIM 900000
 #define PWMMINLIM 200000
 
-/* Connect to the GPIO daemon, setup PWM pins and ensure the robot is not moving */
+/* Connect to the GPIO daemon, setup PWM pins and ensure the robot is not moving.
+The pigpiod daemon must be running on the Pi. In terminal, >sudo pigpiod will start it */
 void setupMotors(void);
 
 /* Calculate what value of PWM we want to use based on a speed value from -1.0 to 1.0.

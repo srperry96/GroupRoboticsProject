@@ -2,12 +2,12 @@
 <package format="2">
 	<name>IMUPublisher</name>
 	<version>0.0.0</version>
-	<description>The IMUPublisher package</description>
-	<maintainer email="yg@wdf.sdv">aa</maintainer>
+	<description>The IMUPublisher Package</description>
+	<maintainer email="srp518@york.ac.uk">Samuel Perry</maintainer>
 	<license>TODO</license>
 
-	<buildtool_depend>catkin</buildtool_depend>	
-	<build_depend>roscpp</build_depend>	
+	<buildtool_depend>catkin</buildtool_depend>
+	<build_depend>roscpp</build_depend>
 	<build_depend>rospy</build_depend>
 	<build_depend>std_msgs</build_depend>
 

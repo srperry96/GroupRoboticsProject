@@ -1,19 +1,24 @@
+/* Functions for calculating and setting the hardware PWM on the Raspberry Pi to
+make the ground robot's wheels move.
+Written by Samuel Perry */
+
 #include "groundRobotMotorControl.h"
 
 //ID of the raspberry pi to be used in GPIO operations
 int pi;
 
-/* Connect to the GPIO daemon, setup PWM pins and ensure the robot is not moving */
+/* Connect to the GPIO daemon, setup PWM pins and ensure the robot is not moving.
+The pigpiod daemon must be running on the Pi. In terminal, >sudo pigpiod will start it */
 void setupMotors(){
 	//connect to pigiod daemon
-	pi = pigpio_start(NULL, NULL);	
-	
+	pi = pigpio_start(NULL, NULL);
+
 	//setup direction pin 1
 	set_mode(pi, 26, PI_OUTPUT);
-	
+
 	//setup direction pin 2
 	set_mode(pi, 6, PI_OUTPUT);
-	
+
 	//ensure robot is not moving
 	brake();
 }
@@ -22,7 +27,7 @@ void setupMotors(){
 Simple calculation to convert to a PWM value from PWMMINLIM to PWMMAXLIM (defined in header) */
 int calculatePWM(float speed){
 	if(speed < 0) speed = -speed;
-	
+
 	if(speed > 1){
 		return PWMMAXLIM;
 	}else{
@@ -33,8 +38,8 @@ int calculatePWM(float speed){
 /* Set the PWM value of a given wheel corresponding to a given speed */
 void setPWM(int wheel, float speed){
 	//get PWM value based on speed
-	unsigned long pwmValue = calculatePWM(speed);	
-	
+	unsigned long pwmValue = calculatePWM(speed);
+
 	//set the corresponding wheel PWM
 	if(wheel == RIGHTWHEEL){
 		//set direction pin
