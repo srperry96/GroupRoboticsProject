@@ -1,3 +1,6 @@
+/* Functions for using the IR sensors on the ground robot.
+Written by Samuel Perry */
+
 #ifndef __IRFUNCS_H__
 #define __IRFUNCS_H__
 
@@ -25,6 +28,5 @@ void irReadSensors();
 
 /* Set the IR multiplexer select pins corresponding to the sensor we wish to read */
 void irWriteSelectPins(int num);
-
 
 #endif

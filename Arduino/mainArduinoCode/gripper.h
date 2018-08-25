@@ -1,3 +1,7 @@
+/* Functions relating to the arm / gripper of the ground robot
+Written by Tingting Yan (Modifications by Samuel Perry to make the code useable as
+a library rather than its own standalone arduino code)*/
+
 #ifndef __GRIPPER_H__
 #define __GRIPPER_H__
 
@@ -16,7 +20,7 @@
 #define START_ID2 -45
 //Start degrees of servo ID3. The range is -150 to +150.
 #define START_ID3 -80
-//Start degrees of servo ID4. The range is -150 to +150. '-45' of servo 4 means the pi camera looks forwared horizontally. '-60' means the pi camera looks down 15 degrees. 
+//Start degrees of servo ID4. The range is -150 to +150. '-45' of servo 4 means the pi camera looks forwared horizontally. '-60' means the pi camera looks down 15 degrees.
 //That's because at 15 degrees, the ground robot can see the bear both on the floor and on the car in the distance of 40 centimeters.
 #define START_ID4 -60
 

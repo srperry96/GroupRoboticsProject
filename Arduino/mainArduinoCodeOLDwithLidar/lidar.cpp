@@ -1,3 +1,8 @@
+/* Functions to deal with the LIDAR. LIDAR was scrapped late on in the project,
+this is included for completeness.
+Written by Robert Woolley (modifications by Samuel Perry to make it useable as
+a library rather than a standalone piece of arduino code).  */
+
 #include "lidar.h"
 
 Lidar::Lidar(){

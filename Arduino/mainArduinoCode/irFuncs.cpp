@@ -1,3 +1,6 @@
+/* Functions for using the IR sensors on the ground robot.
+Written by Samuel Perry */
+
 #include "irFuncs.h"
 
 //Array holding the most recent set of IR readings
@@ -12,13 +15,14 @@ void irSetupMultiplexerPins(){
 }
 
 /* Set MUX select pins for a given sensor, take a reading and scale to get a distance value in cm from
-the voltage level reading */
+the voltage level reading. Distance calculation taken from datasheet of Sharp IR sensor */
 uint8_t irReadSingleSensor(int sensorNum){
 
+  //set mux pins for the sensor being read
   irWriteSelectPins(sensorNum);
 
+  //take a voltage reading, calculate and return the corresponding distance
   float val = analogRead(IRIN) * 0.0048828125;
-
   return (uint8_t)(13 * pow(val, -1));
 }
 
@@ -31,7 +35,7 @@ void irReadSensors(){
 
 /* Set the IR multiplexer select pins corresponding to the sensor we wish to read */
 void irWriteSelectPins(int num){
-  //select pins 0,1,2 are bits 0,1,2 in binary values 0-7
+  //select pins 0,1,2 are bits 0,1,2 in binary
   switch(num){
     case 0: digitalWrite(IRS0, LOW);
             digitalWrite(IRS1, LOW);

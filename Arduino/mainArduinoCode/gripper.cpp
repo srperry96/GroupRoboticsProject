@@ -1,3 +1,7 @@
+/* Functions relating to the arm / gripper of the ground robot
+Written by Tingting Yan (Modifications by Samuel Perry to make the code useable as
+a library rather than its own standalone arduino code)*/
+
 #include "gripper.h"
 
 //Setup the gripper

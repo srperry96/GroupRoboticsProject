@@ -1,3 +1,7 @@
+/* An old version of the main Arduino code. Included as there was significant
+code written to work with the LIDAR which was scrapped late in the project.
+Written by Samuel Perry */
+
 #include "lidar.h"
 #include "irFuncs.h"
 #include "gripper.h"
@@ -44,7 +48,7 @@ void setup (void) {
 
   //get start value for timing count used for IR polling
   startMillis = millis();
-    
+
 }
 
 /* Loop until SPI flag (SPIF) is set, which means a byte has been received,
@@ -53,7 +57,7 @@ void loop (void) {
 
   //update timer count
   currentMillis = millis();
-  
+
   //read ir sensors every 200ms
   if (currentMillis - startMillis >= 200) {
     irReadSensors();
@@ -82,7 +86,7 @@ void spiHandler(){
     case 'a': spiWriteChar('a'); //Send acknowledge byte
               currentOperation = 'z'; //reset current operation so this doesnt repeat infinitely
               break;
-    
+
     //Transmit the most recent set of IR readings via SPI
     case 'b': if(marker == 0){      //first part is the acknowledgement
                 spiWriteChar('b');
@@ -96,7 +100,7 @@ void spiHandler(){
               }
               marker++; //increase marker so we move onto the next section of the operation
               break;
-      
+
     //LIDAR - trigger a full scan using a given angle increment
     case 'c': if(marker == 0){
                 spiWriteChar('c');
@@ -105,7 +109,7 @@ void spiHandler(){
                 lastScanIncrement = (uint8_t)SPDR; //get increment size from SPI
                 lidar->fullScan(lastScanIncrement);//do a full lidar scan at the given increment
                 //NOTE: The LIDAR scan stops the arduino doing anything else at the same time
-                //NOTE: Raspberry Pi must wait around 5 seconds for the scan to finish before asking for the new readings                
+                //NOTE: Raspberry Pi must wait around 5 seconds for the scan to finish before asking for the new readings
                 currentOperation = 'z';
                 marker = 0;
               }
@@ -140,14 +144,14 @@ void spiHandler(){
                 lidar->turnToAngle(desiredAngle); //tell lidar to move to the angle
                 if(lidar->moving != true){ //if movement is finished, continue
                   marker++;
-                }                             
+                }
               }else if(marker == 4){
                 spiWriteChar('x'); //transmit an 'x' to show we have reached the correct angle, then reset markers
                 marker = 0;
-                currentOperation = 'z';          
+                currentOperation = 'z';
               }
               break;
-              
+
     //LIDAR - trigger single scan (assume we're already at the correct angle)
     case 'f': if(marker == 0){
                 spiWriteChar('f');
@@ -169,7 +173,7 @@ void spiHandler(){
                 currentOperation = 'z';
               }
               break;
-              
+
     //Set LIDAR range - long or short
     case 'h': if(marker == 0){
                 spiWriteChar('h');//ack byte
@@ -185,7 +189,7 @@ void spiHandler(){
                 marker = 0;
               }
               break;
-    
+
     //Set LIDAR time budget
     case 'i': if(marker == 0){
                 spiWriteChar('i');//ack
@@ -197,7 +201,7 @@ void spiHandler(){
                 currentOperation = 'z';
               }
               break;
-              
+
     //Gripper - grip high
     case 'j': if(marker == 0){
                 spiWriteChar('j');
@@ -216,7 +220,7 @@ void spiHandler(){
               }else{
                 floorTeddy();
                 marker = 0;
-                currentOperation = 'z';                
+                currentOperation = 'z';
               }
               break;
 
@@ -252,7 +256,7 @@ void spiHandler(){
                 currentOperation = 'z';
               }
               break;
-              
+
     //default operation just resets the markers. This shouldnt ever be reached, but may be if the SPI interface receives erroneous data/noise
     //and interprets it as a message
     default:  currentOperation = 'z'; //
