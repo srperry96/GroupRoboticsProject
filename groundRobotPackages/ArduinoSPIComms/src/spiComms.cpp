@@ -1,3 +1,8 @@
+/* All functions related to the SPI communication between the Raspberry Pi and the
+Arduino in the ground robot.
+Written by Samuel Perry (spiTxRx() function and three other lines of code copied
+from http://robotics.hobbizine.com/raspiduino.html) */
+
 #include "spiComms.h"
 
 using namespace std;
@@ -9,11 +14,13 @@ uint8_t irValues[8] = {};
 
 /* Sets up the SPI connection to the Arduino */
 int setupSPIComms(){
-   fd = open("/dev/spidev0.0", O_RDWR);
-   unsigned int speed = 1000000;
-   ioctl (fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+  //the following three lines set up the SPI interface. They are copied directly
+  //from an example code at http://robotics.hobbizine.com/raspiduino.html
+  fd = open("/dev/spidev0.0", O_RDWR);
+  unsigned int speed = 1000000;
+  ioctl (fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
 
-   	//Check SPI is working
+  //Check SPI is working with a simple handshake
 	if(!spiHandshake()){
 		printf("FAILED TO CONNECT SPI\n");
 		return 0;
@@ -23,7 +30,8 @@ int setupSPIComms(){
 	};
 }
 
-/* Transmits one byte via SPI, returns a byte from SPI */
+/* Transmits one byte via SPI, returns a byte from SPI. This code is directly copied
+from http://robotics.hobbizine.com/raspiduino.html (hence no comments) */
 int spiTxRx(unsigned char txDat){
 
   unsigned char rxDat;
@@ -41,9 +49,25 @@ int spiTxRx(unsigned char txDat){
   return rxDat;
 }
 
-/* Check spi is working with a simple handshake */
-int spiHandshake(){
+/* NOTE: From here onwards each function follows a similar process for SPI communication.
+First, a byte is transmitted, then we wait for an acknowledgement byte. Once received, we
+can carry out the rest of the operation. Comments in the following code are only written
+for the first occurence of a process so there isn't repetition */
+/* The following is the list of characters transmitted and their corresponding
+function:
+    a - handshake
+    b - IR      - get a set of IR readings
+    c - gripper - grip high
+    d - gripper - grip low
+    e - gripper - reset
+    f - gripper - tilt camera to low position
+    g - gripper - tilt camera to centre position
+    h - laser   - get the most recent reading
+*/
 
+
+/* Check SPI communication is working with a simple handshake */
+int spiHandshake(){
 	char received;
 
   //transmit start byte 'a' corresponding to a handshake byte
@@ -52,7 +76,7 @@ int spiHandshake(){
   //transmit another 0 so we can receive a byte
 	received = spiTxRx(0);
 
-  //if we receive an 'a' back, handshake is successful
+  //if we received an 'a' back, handshake is successful
 	if(received == 'a'){
 		printf("SPI connected successfully\n");
 		return 1;
@@ -62,27 +86,26 @@ int spiHandshake(){
 	}
 }
 
-/* Get a set of 8 IR values from the arduino via spi */
+/* Get a set of 8 IR values from the Arduino via SPI */
 void irGetValues(){
-
-    char received = 0;
-    bool ack = false;
+    char received;
 
     do{
       //transmit start byte b
       received = spiTxRx('b');
       usleep(10);
+    }while(received != 'b'); //loop until we receive the correct acknowledgement
 
-    }while(received != 'b');
-
-    //transmit a byte (doesnt matter what), so we can read a byte
+    //transmit a byte (doesnt matter what), so we can read a byte (this is how Pi SPI communication works)
     for(int i = 0; i < 8; i++){
+      //save the received values in the irValues array
       received = spiTxRx(0);
       irValues[i] = (uint8_t)received;
-      //if value is over ~40 the sensors are inaccurate, so set to 127. also if 0 as this indicates a bad read
+      //if value is over ~50cm the sensors become inaccurate, so set to 127. also if 0 as this indicates a bad read
       if((irValues[i] == 0) || (irValues[i] > 50)){
           irValues[i] = 127;
       }
+      //sleep for 10us so SPI transfer has time to occur
       usleep (10);
     }
 }
@@ -91,24 +114,18 @@ void irGetValues(){
 void armGripHigh(){
   char received;
 
-  spiTxRx('c');
-  usleep(10);
-
   do{
     received = spiTxRx('c');
     usleep(10);
   }while(received != 'c');
 
-
+  //debugging printout
   printf("Arm gripped high\n");
 }
 
 /* Tell the arm to grip in the low position */
 void armGripLow(){
   char received;
-
-  spiTxRx('d');
-  usleep(10);
 
   do{
     received = spiTxRx('d');
@@ -122,9 +139,6 @@ void armGripLow(){
 void armReset(){
   char received;
 
-  spiTxRx('e');
-  usleep(10);
-
   do{
     received = spiTxRx('e');
     usleep(10);
@@ -136,9 +150,6 @@ void armReset(){
 /* Tilt the arm camera down (used when the teddy is below the camera) */
 void armTiltCameraLow(){
   char received;
-
-  spiTxRx('f');
-  usleep(10);
 
   do{
     received = spiTxRx('f');
@@ -152,9 +163,6 @@ void armTiltCameraLow(){
 void armTiltCameraCenter(){
   char received;
 
-  spiTxRx('g');
-  usleep(10);
-
   do{
     received = spiTxRx('g');
     usleep(10);
@@ -167,7 +175,6 @@ void armTiltCameraCenter(){
 uint8_t laserGetReading(){
 	char received = 0;
 
-  //transmit h and wait for acknowledgement
 	do{
 		received = spiTxRx('h');
 		usleep(10);
@@ -176,7 +183,7 @@ uint8_t laserGetReading(){
   //push one more 0 to retrieve our measurement
   received = spiTxRx(0);
 
-	printf("laser scan value %d\n", (uint8_t)received);
+	printf("Laser scan value %d\n", (uint8_t)received);
 
   return (uint8_t)received;
 }

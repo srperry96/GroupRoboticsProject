@@ -1,7 +1,11 @@
+/*ROS node which handles all of the communication between the Raspberry Pi and the
+Arduino in the ground robot.
+Written by Samuel Perry.*/
+
 /* Note: There is some casting from uint8_t to uint16_t in this file. This is because the
 values are being published to a topic which is subscribed to by a node written in python. Python
 doesn't handle unsigned integers, so we need the extra bits in order to store the numbers in such
-a way that we can publish to ROS and have python understand them. */
+a way that we can publish to ROS and have python understand them without losing data. */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -17,7 +21,7 @@ a way that we can publish to ROS and have python understand them. */
 
 #include "spiComms.h"
 
-//publishers - declared globally as they are initialised in main, then used in callback functions
+//Publishers for IR and laser time of flight sensor readings
 ros::Publisher irPub;
 ros::Publisher laserPub;
 
@@ -41,6 +45,7 @@ void requestIRReadingsCallback(const std_msgs::Empty& msg){
 	irPub.publish(irReadings);
 }
 
+/* Callback for any gripper instructions. Calls the corresponding gripper command */
 void gripperInstructionsCallback(const std_msgs::Int8::ConstPtr& msg){
 	switch(msg->data){
 		//reset the gripper to its start position
@@ -70,7 +75,7 @@ void gripperInstructionsCallback(const std_msgs::Int8::ConstPtr& msg){
 /* Callback function which gets the most recent laser sensor reading from the arduino, then publishes it */
 void requestLaserReadingCallback(const std_msgs::Empty& msg){
 	std_msgs::Int16 laserReading;
-	//cast to 16 bit uint here as python doesnt do unsigned ints ie uses the MSB as a sign
+	//cast to 16 bit uint here as python doesnt do unsigned ints ie uses the MSB as a sign, so we lose info if we dont cast
 	laserReading.data = (uint16_t)laserGetReading();
 
 	laserPub.publish(laserReading);
@@ -96,15 +101,13 @@ int main(int argc, char **argv){
 	//Subscriber used to request a laser sensor reading
 	ros::Subscriber laserReadingRequestSubscriber = nh.subscribe("/groundRobot/RequestLaserReading", 10, requestLaserReadingCallback);
 
-	//setup SPI connection and test it. If this fails, return 0
+	//setup SPI connection and test it with a basic handshake. If this fails, return 0
 	if(!setupSPIComms()){
 		return 0;
 	};
 
-
 	//start ROS functionality
 	ros::spin();
-
 
 	return 0;
 }

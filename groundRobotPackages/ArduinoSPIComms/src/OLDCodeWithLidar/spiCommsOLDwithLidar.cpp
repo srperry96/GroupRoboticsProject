@@ -1,3 +1,8 @@
+/* An old version of the SPI communications code. Included for completeness as
+a significant amount of code was written for use with the LIDAR, which was scrapped
+late in the project.
+Written by Samuel Perry */
+
 #include "spiComms.h"
 
 using namespace std;

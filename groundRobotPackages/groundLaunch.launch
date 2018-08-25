@@ -1,3 +1,4 @@
+<!--Main launch file for the ground robot's ROS nodes. Written by Samuel Perry-->
 <launch>
 	<node name="groundYawPublisher" pkg="IMUPublisher" type="imuPublisher"/>
 	<node name="groundMovementSubscriber" pkg="MovementSubscriber" type="movementSubscriber"/>

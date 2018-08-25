@@ -1,3 +1,9 @@
+/* All functions related to the SPI communication between the Raspberry Pi and the
+Arduino in the ground robot.
+Written by Samuel Perry (spiTxRx() function and three other lines of code copied
+from http://robotics.hobbizine.com/raspiduino.html) */
+
+
 #ifndef __SPICOMMS_H__
 #define __SPICOMMS_H__
 
@@ -9,9 +15,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
-
-//spi directory variable
-extern int fd;
 
 //IR readings
 extern uint8_t irValues[8];

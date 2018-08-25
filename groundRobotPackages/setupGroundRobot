@@ -1,4 +1,6 @@
 #!/bin/bash
+#bash script for setting up the Raspberry Pi used in the ground robot
+#written by Samuel Perry
 
 #check ros master ip parameter is given
 if [ "$1" = "" ]; then
@@ -10,9 +12,8 @@ else
 	#set ros ip addresses
 	export ROS_IP="$(hostname -I)"
 	export ROS_MASTER_URI=http://192.168.1."$1":11311
-	#export a display as OpenCV requires it (allows us to run image processing on a headless pi)
-	export DISPLAY=:0.0
-	#change to the main ros workspace and run everything
+
+	#change to the main ros workspace and run the main launch file
 	cd /home/pi/Desktop/GRP/ground_robot_ws
 	source devel/setup.bash
 	roslaunch groundLaunch.launch

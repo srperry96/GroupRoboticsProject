@@ -1,3 +1,9 @@
+/* The old version of the Arduino to Pi SPI communication ROS node. Included
+for completeness as there was a large amount of code written for the LIDAR which
+was scrapped late in the project.
+Written by Samuel Perry */
+
+
 /* Note: There is a lot of casting from uint8_t to uint16_t in this file. This is because the
 values are being published to a topic which is subscribed to by a node written in python. Python
 doesn't handle unsigned integers, so we need the extra bits in order to store the numbers in such
