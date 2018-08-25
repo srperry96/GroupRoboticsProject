@@ -1,3 +1,7 @@
+/* Blob detection node for detecting the green of the teddy bear's jumper.
+Publishes the location of the bear with regards to the camera for use in controllers.
+Written by Samuel Perry (noiseRemoval() function written by Finlay Hudson)*/
+
 #include <iostream>
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
@@ -26,7 +30,7 @@ image_transport::Publisher blobITPub;
 int lowGreenH  = 50, lowGreenS  = 50,  lowGreenV  = 44;
 int highGreenH = 90, highGreenS = 161, highGreenV = 100;
 
-/* Noise removal / filtering function - written by Finlay */
+/* Noise removal / filtering function - written by Finlay Hudson */
 void noiseRemoval(Mat &mask)
 {
   Mat erodeElement = getStructuringElement(MORPH_RECT, Size(3,3), Point(-1, -1)); //Any white part thats less than 7x7 px's gets ignored as it is seen as noise
@@ -37,7 +41,7 @@ void noiseRemoval(Mat &mask)
   erode(mask, mask, erodeElement);
   erode(mask, mask, erodeElement);
 
-  //dilate
+  //dilate - expands the remaing pixels, hopefully filling in the gaps to make a solid object
   dilate(mask, mask, dilateElement);
   dilate(mask, mask, dilateElement);
 }
@@ -68,8 +72,8 @@ int getBiggestBlob(const std::vector<KeyPoint>& keypoints){
 Calculates the biggest blob and publishes its location and size in a ros::Point message */
 void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     std_msgs::Int8 seeGreenMsg;
-
     cv_bridge::CvImagePtr cv_ptr;
+
     //try to convert the frame of video to OpenCV format
     try{
       cv_ptr = cv_bridge::toCvCopy(originalImage, sensor_msgs::image_encodings::BGR8);
@@ -77,8 +81,10 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
         ROS_ERROR("ROSOpenCV::main.cpp::cv_bridge exception: %s", e.what());
         return;
     }
-
-    Mat img_mask, img_hsv;
+    //image converted from RGB to HSV
+    Mat img_hsv;
+    //filtered image (all green from the original is now white, everything else is black)
+    Mat img_mask
 
     //filter out all except the green of the teddys jumper, then convert to a black and white image where white represents green
     cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV);
@@ -90,8 +96,7 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     //setup blob detection parameters
     SimpleBlobDetector::Params params;
     params.filterByColor = true;
-    //only detect blobs of white
-    params.blobColor = 255;
+    params.blobColor = 255;     //only detect blobs of white
     params.filterByArea = true;
     params.minArea = 300;
     params.maxArea = 1000000000000;
@@ -137,7 +142,6 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
 
     //wait a short time
     waitKey(3);
-
 }
 
 
@@ -146,6 +150,7 @@ int main(int argc, char** argv){
 
   ros::NodeHandle nh;
 
+  //create the video feed handler
   image_transport::ImageTransport it(nh);
 
   //Subscriber for listening to the raspberry pi camera topic

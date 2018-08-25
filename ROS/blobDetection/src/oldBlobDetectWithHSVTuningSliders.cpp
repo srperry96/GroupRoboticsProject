@@ -1,3 +1,9 @@
+/* An old version of the blob detection code, which includes sliders for tuning
+the HSV values for filtering all but the green out of the image.
+This was given to Mengqi to tune the HSV values quickly and effectively.
+This is included for completeness despite being outdated code now.
+Written by Samuel Perry (noiseRemoval() function written by Finlay Hudson) */
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -6,25 +12,16 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <iostream>
-
 #include <opencv2/opencv.hpp>
-
-const int alpha_slider_max = 100;
-int alpha_slider = 0;
-double alpha;
-double beta;
 
 
 using namespace cv;
 namespace enc = sensor_msgs::image_encodings;
 
-static const char WINDOW[] = "Image Processed";
-
-//image_transport::Publisher blobITPub;
-
 int lowGreenH  = 60, lowGreenS  = 40,  lowGreenV  = 25;
 int highGreenH = 80, highGreenS = 105, highGreenV = 102;
 
+/* Noise removal function written by Finlay Hudson */
 void noiseRemoval(Mat &mask)
 {
  Mat erodeElement = getStructuringElement(MORPH_RECT, Size(6,6), Point(-1, -1)); //Any white part thats less than 7x7 px's gets ignored as it is seen as noise
@@ -57,28 +54,29 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
 
     std::vector<KeyPoint> keypoints;
 
+    //setup the parameters for blob detection
     SimpleBlobDetector::Params params;
     params.filterByColor = true;
     params.blobColor = 255;
-
     params.filterByArea = true;
     params.minArea = 300;
     params.maxArea = 1000000000000;
-
     params.filterByConvexity = false;
-
     params.filterByCircularity = false;
 
+    //remove noise
     noiseRemoval(img_mask);
+    //create and run blob detection
     Ptr<cv::SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
     detector->detect(img_mask, keypoints);
 
+    //create a new image which draws circles around the blobs
     Mat imWithKeypoints;
     drawKeypoints(img_mask, keypoints, imWithKeypoints, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
+    //show the image in the window
     imshow("Tuning HSV", imWithKeypoints);
     waitKey(3);
-  //  blobITPub.publish(cv_ptr->toImageMsg());
 }
 
 
@@ -87,10 +85,11 @@ int main(int argc, char** argv){
 
   ros::NodeHandle nh;
 
+  //create the video feed handler
   image_transport::ImageTransport it(nh);
 
+  //create a window with 6 sliders for values of low H,S,V and high H,S,V respectively
   namedWindow("Tuning HSV", 1);
-
   createTrackbar("Low H", "Tuning HSV", &lowGreenH, 180);
   createTrackbar("Low S", "Tuning HSV", &lowGreenS, 255);
   createTrackbar("Low V", "Tuning HSV", &lowGreenV, 255);
@@ -101,10 +100,10 @@ int main(int argc, char** argv){
 
 
   image_transport::Subscriber sub = it.subscribe("raspicam_node/image", 1, blobDetectCallback, ros::VoidPtr(),image_transport::TransportHints("compressed"));
-  //blobITPub = it.advertise("camera/image_processed", 1);
 
   ros::spin();
 
+  //close the window when ROS functionality is finished
   destroyWindow("Tuning HSV");
 
   return 0;
