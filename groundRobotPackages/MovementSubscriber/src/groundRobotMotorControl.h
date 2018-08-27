@@ -9,11 +9,21 @@ Written by Samuel Perry */
 #include <stdint.h>
 #include <pigpiod_if2.h>
 
+//directions - make the code more readable
 #define RIGHTWHEEL 1
 #define LEFTWHEEL 2
 
+//PWM duty cycle limits and frequency
 #define PWMMAXLIM 900000
 #define PWMMINLIM 200000
+#define PWMFREQ 5000
+
+//PWM and direction pins
+#define LEFTPWM 12
+#define RIGHTPWM 13
+#define LEFTDIR 6
+#define RIGHTDIR 26
+
 
 /* Connect to the GPIO daemon, setup PWM pins and ensure the robot is not moving.
 The pigpiod daemon must be running on the Pi. In terminal, >sudo pigpiod will start it */

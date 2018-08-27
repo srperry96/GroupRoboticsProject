@@ -14,10 +14,10 @@ void setupMotors(){
 	pi = pigpio_start(NULL, NULL);
 
 	//setup direction pin 1
-	set_mode(pi, 26, PI_OUTPUT);
+	set_mode(pi, LEFTDIR, PI_OUTPUT);
 
 	//setup direction pin 2
-	set_mode(pi, 6, PI_OUTPUT);
+	set_mode(pi, RIGHTDIR, PI_OUTPUT);
 
 	//ensure robot is not moving
 	brake();
@@ -44,28 +44,28 @@ void setPWM(int wheel, float speed){
 	if(wheel == RIGHTWHEEL){
 		//set direction pin
 		if(speed < 0){
-			gpio_write(pi, 26, 1);
+			gpio_write(pi, RIGHTDIR, 1);
 		}else{
-			gpio_write(pi, 26, 0);
+			gpio_write(pi, RIGHTDIR, 0);
 		}
 		//set PWM
-		hardware_PWM(pi, 13, 5000, pwmValue);
+		hardware_PWM(pi, RIGHTPWM, 5000, pwmValue);
 	}else if(wheel == LEFTWHEEL){
 		//set direction pin
 		if(speed < 0){
-			gpio_write(pi, 6, 0);
+			gpio_write(pi, LEFTDIR, 0);
 		}else{
-			gpio_write(pi, 6, 1);
+			gpio_write(pi, LEFTDIR, 1);
 		}
 		//set PWM
-		hardware_PWM(pi, 12, 5000, pwmValue);
+		hardware_PWM(pi, LEFTPWM, 5000, pwmValue);
 	}
 }
 
 /* Set PWM to 0 for both wheels so the robot stops moving */
 void brake(){
-	hardware_PWM(pi, 12, 0, 0);
-	hardware_PWM(pi, 13, 0, 0);
+	hardware_PWM(pi, LEFTPWM, 0, 0);
+	hardware_PWM(pi, RIGHTPWM, 0, 0);
 }
 
 /* Close connection to the GPIO daemon - stops hardware pwm output */
