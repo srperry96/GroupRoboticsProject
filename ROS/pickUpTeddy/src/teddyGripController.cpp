@@ -35,25 +35,31 @@ ros::Publisher takeControlPublisher;
 ros::Publisher laserRequestReadingPublisher;
 
 /* Function which informs the highlevel controller who should be in control. This
-function either takes or relinquishes control depending on the value of controlState */
+function either takes or relinquishes control depending on the value of controlState.
+0 is no teddy, 1 is found teddy so initiating grip sequence, 2 is have teddy in grip */
 void takeControl(int controlState){
   std_msgs::Int8 ctrlMsg;
   //give up control
   if(controlState == 0){
     ctrlMsg.data = 0;
-    takeControlPublisher.publish(ctrlMsg);
     seeGreen = 0;
     //stop any movement that may have been occuring
     geometry_msgs::Twist stopMoving;
     stopMoving.angular.x = 0; stopMoving.angular.y = 0; stopMoving.angular.z = 0;
     stopMoving.linear.x = 0; stopMoving.linear.y = 0; stopMoving.linear.z = 0;
     movementPublisher.publish(stopMoving);
-  //else take control
-  }else{
+  //else take control so grip sequence can begin
+}else if(controlState == 1){
     ctrlMsg.data = 1;
-    takeControlPublisher.publish(ctrlMsg);
+    seeGreen = 1;
+  //else give up control while informing the highlevel controller that the teddy is in our grasp
+  }else{
+    ctrlMsg.data = 2;
     seeGreen = 1;
   }
+
+  //publish the control state message
+  takeControlPublisher.publish(ctrlMsg);
 }
 
 /* Simple proportional controller for turning on the spot to line up with the teddy */
@@ -147,9 +153,8 @@ std_msgs::Int8 gripCommand;
               gripperCount++;
               break;
 
-      //give back control, but keep seeGreen as 1 since we have the bear
-      case 4: takeControl(0);
-              seeGreen = 1;
+      //give back control, informing the high level controller that the teddy is gripped
+      case 4: takeControl(2);
               currentState = 5;
               break;
 
@@ -191,15 +196,17 @@ void laserReadingCallback(const std_msgs::Int16::ConstPtr& msg){
 void seeGreenCallback(const std_msgs::Int8::ConstPtr& msg){
   //if green is not being detected
   if(msg->data == 0){
-    //if previously, we were seeing green but have lost it, relinquish control
+    //if previously, we were seeing green but have lost it, relinquish control and reset the state machine
     if(seeGreen == 1){
       takeControl(0);
+      currentState = 1;
     }
   //else green is being detected
   }else{
-    //if previously we were not seeing green and now we are, take control
+    //if previously we were not seeing green and now we are, take control and ensure the state machine starts in state 1
     if(seeGreen == 0){
       takeControl(1);
+      currentState = 1;
     }
   }
 }
