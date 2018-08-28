@@ -180,8 +180,10 @@ uint8_t laserGetReading(){
 		usleep(10);
 	}while(received != 'h');
 
+  usleep(1);
   //push one more 0 to retrieve our measurement
   received = spiTxRx(0);
+
 
 	printf("Laser scan value %d\n", (uint8_t)received);
 

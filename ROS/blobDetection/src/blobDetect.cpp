@@ -61,7 +61,12 @@ int getBiggestBlob(const std::vector<KeyPoint>& keypoints){
         }
       }
     }
-    return currentLargest;
+    //ignore smaller blobs since there could be noise falsely detected
+    if(keypoints[currentLargest].size < 40){
+      return -1;
+    }else{
+      return currentLargest;
+    }
   //else there are no blobs in the list, so return -1
   }else{
     return -1;
@@ -133,12 +138,13 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     seeGreenPublisher.publish(seeGreenMsg);
 
     //display the image with blobs marked on (No longer used as we run the pi headless and publish the image to a ros topic)
-    //imshow("BlobDetect", imWithKeypoints);
+    imshow("BlobDetect", imWithKeypoints);
 
     //translate the processed image back to ROS format, then publish it
-    sensor_msgs::ImagePtr processedVideo;
-    processedVideo = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
-    blobITPub.publish(processedVideo);
+    //THIS HAS NOW BEEN COMMENTED OUT DUE TO ISSUES WITH LAG WHEN STREAMING EXTRA VIDEO SOURCES ON THE NETWORK
+    //sensor_msgs::ImagePtr processedVideo;
+    //processedVideo = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
+    //blobITPub.publish(processedVideo);
 
     //wait a short time
     waitKey(3);
@@ -163,7 +169,7 @@ int main(int argc, char** argv){
   seeGreenPublisher = nh.advertise<std_msgs::Int8>("/camera/SeeGreen", 10);
 
   //Publisher for the processed image so we can see what blobs are being detected on other machines
-  blobITPub = it.advertise("camera/ProcessedWithBlobs", 1);
+  //blobITPub = it.advertise("camera/ProcessedWithBlobs", 1);
 
   ros::spin();
 
