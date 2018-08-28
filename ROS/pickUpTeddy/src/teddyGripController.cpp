@@ -15,23 +15,19 @@ Written by Samuel Perry */
 #define CAMERARESX 480
 
 //gains for lining up with the bear, and moving to the right distance to grab it
-float kLineUp = 1.2, kDist = 0.05;
+float kLineUp = 1.2, kDist = 0.03;
 //most recent laser reading received
 int lastLaserReading = 0;
 //flag for whether or not the camera sees green (the teddys jumper)
 int seeGreen = 0;
-
-int timerOn = 0;
-int gripping = 0;
+//timer and flags used for ensuring the gripper has ample time to carry out its motion
+int timerOn = 0, gripping = 0, gripperCount = 0;
+//most recent x position of the teddy on screen
 float teddyPosX = 0;
+//counter for a timeout for the teddy x position (stops controller going mental if the bear goes out of view quickly)
 int teddyPosCount = 0;
-
 //state machine state
 int currentState = 1;
-//count used for timing in the state machine (allows the gripper time to move)
-int gripperCount = 0;
-//size of the teddy blob when gripped. If this decreases significantly, we have dropped the bear
-float teddySizeWhenGripped = 0;
 
 //ros publishers for robot movement, gripper commands, taking control and requesting laser readings
 ros::Publisher movementPublisher;
@@ -39,6 +35,7 @@ ros::Publisher gripperInstructionsPublisher;
 ros::Publisher takeControlPublisher;
 ros::Publisher laserRequestReadingPublisher;
 
+/* Publishes to the movement topic telling the robot to stop all movement */
 void stopMoving(){
   geometry_msgs::Twist stopMoving;
   stopMoving.angular.x = 0; stopMoving.angular.y = 0; stopMoving.angular.z = 0;
@@ -121,13 +118,8 @@ void moveToTeddyController(float xPos){
   movementPublisher.publish(ctrlMsg);
 }
 
-/* Callback function for the position of the teddy blob from the blob detection
-node. This function runs a state machine for the process of picking up the teddy,
-First, we line up with it, then move towards it, then pick it up, then give control
-back to the highlevel controller. The robot checks if the bear is still in its grip,
-if it is lost, the state machine restarts.
-This function runs at ~30Hz since the camera is running at ~30fps. This is used for
-timing in two of the states. */
+/* Callback function for when a blob (representing the teddy) is detected and its data
+received by the node. Updates a most recent position value and resets the timeout counter */
 void teddyPosCallback(const geometry_msgs::Point::ConstPtr& msg){
   teddyPosX = msg->x;
   teddyPosCount = 0;
@@ -165,15 +157,22 @@ void laserReadingsTimerCallback(const ros::TimerEvent&){
   laserRequestReadingPublisher.publish(emptyMsg);
 }
 
+/* Timer used to allow the gripper to carry out its motion. Runs at 4Hz. There are
+two durations possible, the first is for gripping the teddy, the second is for resetting
+the gripper to its start position. */
 void gripperTimerCallback(const ros::TimerEvent&){
+  //gripping the bear
   if(timerOn == 1){
     gripperCount++;
+    //if time limit is reached, set the appropriate flag and reset the counter
     if(gripperCount > 40){
       timerOn = 0;
       gripperCount = 0;
     }
+  //resetting the gripper
   }else if(timerOn == 2){
     gripperCount++;
+    //if time limit is reached, set the appropriate flag and reset the counter
     if(gripperCount > 20){
       timerOn = 0;
       gripperCount = 0;
@@ -181,8 +180,10 @@ void gripperTimerCallback(const ros::TimerEvent&){
   }
 }
 
-
-//20hz
+/* Timer callback function containing the state machine which handles the entire sequence of picking
+up the teddy. The machine is started when green is detected. State 1 lines up the robot with the bear,
+state two moves towards the bear while remaining aligned, state 3 grabs the bear, state 4 checks the
+bear is still gripped as the robot returns home. State 5 resets the gripper if the bear is dropped. */
 void stateMachineTimerCallback(const ros::TimerEvent&){
   std_msgs::Int8 gripCommand;
 
@@ -223,8 +224,10 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
                   //start countdown timer for gripper movement
                   timerOn = 1;
                   gripping = 1;
+                //if timer has finished
                 }else if(gripping == 1){
                   if(timerOn == 0){
+                    //give back control to high level controller
                     takeControl(2);
                     currentState = 4;
                     gripping = 0;
@@ -237,6 +240,7 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
                 //if laser reading is too large we have probably dropped the bear
         case 4: if(lastLaserReading > 28){
                   currentState = 5;
+                  //take control from high level controller
                   takeControl(1);
                   printf("state 5\n");
                 }
@@ -246,10 +250,11 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
         case 5: if(gripping == 0){ //publish grip command once
                   gripCommand.data = 0;
                   gripperInstructionsPublisher.publish(gripCommand);
+                  //set timer going
                   timerOn = 2;
                   gripping = 1;
+                //if timer is finished, move on
                 }else if(gripping == 1){
-                  printf("a\n");
                   if(timerOn == 0){
                     printf("state 1\n");
                     gripping = 0;
@@ -278,8 +283,10 @@ int main(int argc, char **argv){
   //Timer used to poll the laser distance sensor at a rate of 4Hz
   ros::Timer laserReadingsTimer = nh.createTimer(ros::Duration(0.25), laserReadingsTimerCallback);
 
+  //Timer used for ensuring the gripper has enough time to perform a movement
   ros::Timer gripperTimer = nh.createTimer(ros::Duration(0.25), gripperTimerCallback);
 
+  //Timer running a state machine 20 times a second
   ros::Timer stateMachineTimer = nh.createTimer(ros::Duration(0.05), stateMachineTimerCallback);
 
   //Publisher to tell the highlevelController to give up control, as we can see the bear

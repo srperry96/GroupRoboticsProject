@@ -24,7 +24,9 @@ ros::Publisher biggestBlobPublisher;
 //Publisher to tell the system if green is currently being detected
 ros::Publisher seeGreenPublisher;
 //Publisher for the processed video
-image_transport::Publisher blobITPub;
+//THIS IS NO LONGER USED DUE TO ISSUES WITH NETWORK LAG. THE VIDEO IS NOW DISPLAYED ON SCREEN INSTEAD
+//OF STREAMING IT OUT TO RELEIVE STRESS ON THE NETWORK. CODE IS HERE FOR COMPLETENESS
+//image_transport::Publisher blobITPub;
 
 //HSV values for filtering out everything but green (teddys jumper colour)
 int lowGreenH  = 50, lowGreenS  = 50,  lowGreenV  = 44;
@@ -62,6 +64,7 @@ int getBiggestBlob(const std::vector<KeyPoint>& keypoints){
       }
     }
     //ignore smaller blobs since there could be noise falsely detected
+    //the value 40 was chosen through testing with the bear and camera, printing out the detected blob sizes.
     if(keypoints[currentLargest].size < 40){
       return -1;
     }else{
@@ -137,14 +140,15 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     }
     seeGreenPublisher.publish(seeGreenMsg);
 
-    //display the image with blobs marked on (No longer used as we run the pi headless and publish the image to a ros topic)
+    //display the image with blobs marked on
     imshow("BlobDetect", imWithKeypoints);
 
     //translate the processed image back to ROS format, then publish it
     //THIS HAS NOW BEEN COMMENTED OUT DUE TO ISSUES WITH LAG WHEN STREAMING EXTRA VIDEO SOURCES ON THE NETWORK
-    //sensor_msgs::ImagePtr processedVideo;
-    //processedVideo = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
-    //blobITPub.publish(processedVideo);
+    //WE NOW USE 'imshow' ABOVE TO DISPLAY THE IMAGE LOCALLY ON SCREEN
+    /*sensor_msgs::ImagePtr processedVideo;
+    processedVideo = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imWithKeypoints).toImageMsg();
+    blobITPub.publish(processedVideo);*/
 
     //wait a short time
     waitKey(3);
@@ -169,6 +173,7 @@ int main(int argc, char** argv){
   seeGreenPublisher = nh.advertise<std_msgs::Int8>("/camera/SeeGreen", 10);
 
   //Publisher for the processed image so we can see what blobs are being detected on other machines
+  //NO LONGER USED FOR THE REASONS EXPLAINED ABOVE (ISSUES WITH LAG)
   //blobITPub = it.advertise("camera/ProcessedWithBlobs", 1);
 
   ros::spin();
