@@ -84,7 +84,7 @@ void blobDetectCallback(const sensor_msgs::ImageConstPtr& originalImage){
     //image converted from RGB to HSV
     Mat img_hsv;
     //filtered image (all green from the original is now white, everything else is black)
-    Mat img_mask
+    Mat img_mask;
 
     //filter out all except the green of the teddys jumper, then convert to a black and white image where white represents green
     cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV);
