@@ -53,11 +53,11 @@ void move_overall(float degree_id1, float degree_id2, float degree_id3, float de
   //Move the actuator to the position at a fixed speed
   Dynamixel.moveSpeed(2, position_id[1], MOVE_SPEED);
   Dynamixel.moveSpeed(4, position_id[3], MOVE_SPEED);
-  delay(2000);
+  delay(1000);
   Dynamixel.moveSpeedRW(1, position_id[0], MOVE_SPEED);
   Dynamixel.moveSpeedRW(3, position_id[2], MOVE_SPEED);
   Dynamixel.action();
-  delay(2000);
+  delay(1000);
 }
 
 //Call this function to grab the bear if it is on the floor

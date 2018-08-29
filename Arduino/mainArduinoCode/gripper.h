@@ -15,11 +15,11 @@ a library rather than its own standalone arduino code)*/
 //Set turn speed of servo ID1 and ID3 in continuous mode to be 300
 #define TURN_SPEED 300
 //Start degrees of servo ID1. The range is -150 to +150.
-#define START_ID1 80
+#define START_ID1 90
 //Start degrees of servo ID2. The range is -150 to +150.
 #define START_ID2 -45
 //Start degrees of servo ID3. The range is -150 to +150.
-#define START_ID3 -80
+#define START_ID3 -90
 //Start degrees of servo ID4. The range is -150 to +150. '-45' of servo 4 means the pi camera looks forwared horizontally. '-60' means the pi camera looks down 15 degrees.
 //That's because at 15 degrees, the ground robot can see the bear both on the floor and on the car in the distance of 40 centimeters.
 #define START_ID4 -60

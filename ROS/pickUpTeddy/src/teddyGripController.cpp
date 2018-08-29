@@ -165,7 +165,7 @@ void gripperTimerCallback(const ros::TimerEvent&){
   if(timerOn == 1){
     gripperCount++;
     //if time limit is reached, set the appropriate flag and reset the counter
-    if(gripperCount > 40){
+    if(gripperCount > 25){
       timerOn = 0;
       gripperCount = 0;
     }
