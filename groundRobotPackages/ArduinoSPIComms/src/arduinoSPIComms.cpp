@@ -96,7 +96,7 @@ int main(int argc, char **argv){
 	ros::Subscriber requestIRReadingsSubscriber = nh.subscribe("/groundRobot/RequestIRReadings", 10, requestIRReadingsCallback);
 
 	//Subscriber for any gripper instructions
-	ros::Subscriber gripperInstructionsSubscriber = nh.subscribe("/groundRobot/GripperInstructions", 10, gripperInstructionsCallback);
+	ros::Subscriber gripperInstructionsSubscriber = nh.subscribe("/groundRobot/GripperInstructions", 0, gripperInstructionsCallback);
 
 	//Subscriber used to request a laser sensor reading
 	ros::Subscriber laserReadingRequestSubscriber = nh.subscribe("/groundRobot/RequestLaserReading", 10, requestLaserReadingCallback);

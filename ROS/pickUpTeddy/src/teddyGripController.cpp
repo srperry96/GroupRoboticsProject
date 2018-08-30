@@ -29,6 +29,10 @@ int teddyPosCount = 0;
 //state machine state
 int currentState = 1;
 
+bool teddyInGrip = false;
+
+unsigned long lostGreenCounter = 0;
+
 //ros publishers for robot movement, gripper commands, taking control and requesting laser readings
 ros::Publisher movementPublisher;
 ros::Publisher gripperInstructionsPublisher;
@@ -50,21 +54,26 @@ void takeControl(int controlState){
   std_msgs::Int8 ctrlMsg;
   //give up control
   if(controlState == 0){
-    printf("control 0\n");
+    printf("Gave back control to search (0)\n");
     ctrlMsg.data = 0;
     seeGreen = 0;
+    currentState = 1;
+    std_msgs::Int8 gripCommand;
+    gripCommand.data = 0;
+    gripperInstructionsPublisher.publish(gripCommand);
     //stop any movement that may have been occuring
     stopMoving();
   //else take control so grip sequence can begin
   }else if(controlState == 1){
     ctrlMsg.data = 1;
-        printf("control 1\n");
+    printf("Took control (1)\n");
     seeGreen = 1;
   //else give up control while informing the highlevel controller that the teddy is in our grasp
   }else if(controlState == 2){
     ctrlMsg.data = 2;
     seeGreen = 1;
-    printf("control 2\n");
+    lostGreenCounter = 0;
+    printf("Gave back control to go home (2)\n");
   }
 
   //publish the control state message
@@ -96,11 +105,11 @@ void moveToTeddyController(float xPos){
   geometry_msgs::Twist ctrlMsg;
   float errorDist, errorAngle;
 
-  //ideal distance is 16cm, so control to near enough there
-  if((lastLaserReading > 14) && (lastLaserReading < 18)){
+  //ideal distance is 18cm, so control to near enough there
+  if((lastLaserReading > 16) && (lastLaserReading < 20)){
     errorDist = 0;
   }else{
-    errorDist = lastLaserReading - 16;
+    errorDist = lastLaserReading - 18;
   }
 
   //ensure we are always aligned with the bear while moving
@@ -134,18 +143,28 @@ void laserReadingCallback(const std_msgs::Int16::ConstPtr& msg){
   }
 }
 
+
+
 /* Callback for when green is detected. Takes or gives up control correspondingly */
 void seeGreenCallback(const std_msgs::Int8::ConstPtr& msg){
   //if green is not being detected
   if(msg->data == 0){
-    //if previously, we were seeing green but have lost it, relinquish control
+    //if previously we were seeing green but have lost it, increase counter
     if(seeGreen == 1){
-      //takeControl(0);
+      lostGreenCounter++;
+      //if we havent seen green for 30 frames, assume it is lost, so give back control
+      if(lostGreenCounter == 30){
+        //make sure we dont have the teddy gripped (when too close to the camera we dont detect green)
+        if(teddyInGrip == false){
+          takeControl(0);
+        }
+      }
     }
   //else green is being detected
   }else{
     //if previously we were not seeing green and now we are, take control
     if(seeGreen == 0){
+      lostGreenCounter = 0;
       takeControl(1);
     }
   }
@@ -201,6 +220,7 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
                 //if teddy is lined up, we can move on to the next state
                 if(((teddyPosX - (CAMERARESX / 2)) > -30) && ((teddyPosX - (CAMERARESX / 2)) < 30)){
                   currentState = 2;
+                  lostGreenCounter = 0;
                   printf("state 2\n");
                 }
                 break;
@@ -208,7 +228,7 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
         //move to within grabbing distance of teddy
         case 2: moveToTeddyController(teddyPosX - (CAMERARESX / 2));
                 //if we're in range for grabbing the teddy, move to next state
-                if((lastLaserReading < 18) && (lastLaserReading > 14)){
+                if((lastLaserReading < 20) && (lastLaserReading > 16)){
                   currentState = 3;
                   //stop the robot moving
                   stopMoving();
@@ -224,6 +244,7 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
                   //start countdown timer for gripper movement
                   timerOn = 1;
                   gripping = 1;
+                  teddyInGrip = true;
                 //if timer has finished
                 }else if(gripping == 1){
                   if(timerOn == 0){
@@ -256,9 +277,11 @@ void stateMachineTimerCallback(const ros::TimerEvent&){
                 //if timer is finished, move on
                 }else if(gripping == 1){
                   if(timerOn == 0){
+                    lostGreenCounter = 0;
                     printf("state 1\n");
                     gripping = 0;
                     currentState = 1;
+                    teddyInGrip = false;
                   }
                 }
                 break;
