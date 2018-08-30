@@ -128,7 +128,7 @@ void teddyPosCallback(const geometry_msgs::Point::ConstPtr& msg){
 /* Callback function for when a new laser reading is receieved. Simply updates
 the lastLaserReading value */
 void laserReadingCallback(const std_msgs::Int16::ConstPtr& msg){
-//ERROR SOMEWHERE IN LASER READING CODE MEANS !)$ COMES OUT A LOT. IGNORE THAT
+//if SPI connections is busy when a reading is requested, 104 (the start byte) is returned. Ignore the reading if this is the case
   if(msg->data != 104){
     lastLaserReading = msg->data;
   }
